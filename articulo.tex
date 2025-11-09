@@ -8,18 +8,24 @@
 \usepackage{algpseudocode}
 \usepackage{hyperref}
 \usepackage{multirow}
+\usepackage{amsfonts} 
+\usepackage{bm} 
 
 \title{Algoritmo Wagner-Whitin: Modelo Dinámico de Dimensionamiento de Lotes}
-\author{Martin Rojas Medrano}
+\author{Martin Rojas}
 \date{\today}
 
-\newtheorem{theorem}{Teorema}
-\newtheorem{lemma}{Lema}
-\newtheorem{definition}{Definición}
-\newtheorem{corollary}{Corolario}
-\newtheorem{proposition}{Proposición}
-\newtheorem{remark}{Observación}
-\newtheorem{example}{Ejemplo}
+
+\newtheorem{theorem}{Teorema}[section]
+\newtheorem{lemma}[theorem]{Lema}
+\newtheorem{definition}[theorem]{Definición}
+\newtheorem{corollary}[theorem]{Corolario}
+\newtheorem{proposition}[theorem]{Proposición}
+\newtheorem{remark}[theorem]{Observación}
+\newtheorem{example}[theorem]{Ejemplo}
+
+
+\usepackage{cleveref}
 
 \begin{document}
 
@@ -66,14 +72,12 @@ La solución óptima a este problema está dada por:
 
 \[
 Q^* = \sqrt{\frac{2DS}{H}}
-\tag{1}
 \]
 
 que produce un costo total mínimo por unidad de tiempo:
 
 \[
 TC^* = \sqrt{2DSH}
-\tag{2}
 \]
 
 Sin embargo, el modelo EOQ resulta inadecuado cuando la demanda varía significativamente entre periodos, lo que motiva el desarrollo de modelos dinámicos como el de Wagner-Whitin.
@@ -116,7 +120,6 @@ h_{t-1} \cdot I + \delta(x_t) \cdot s_t + f_{t+1}(I + x_t - d_t) & \text{si } I 
 \infty & \text{en otro caso}
 \end{array}
 \right.
-\tag{3}
 \end{equation}
 
 donde:
@@ -138,7 +141,6 @@ f_{N+1}(I) = \begin{cases}
 \infty & \text{si } I > 0
 \end{cases}
 \quad \text{para todo } I \geq 0
-\tag{4}
 \end{equation}
 \end{definition}
 
@@ -150,7 +152,6 @@ Aunque el problema de Wagner-Whitin incluye costos fijos (no convexos), la estru
 Una función $f: \mathbb{R}^n \rightarrow \mathbb{R}$ es convexa si para todo $x, y \in \mathbb{R}^n$ y $\lambda \in [0,1]$:
 \begin{equation}
 f(\lambda x + (1-\lambda)y) \leq \lambda f(x) + (1-\lambda)f(y)
-\tag{5}
 \end{equation}
 \end{definition}
 
@@ -164,14 +165,12 @@ La formulación de Wagner-Whitin, aunque no estrictamente convexa debido a la pr
     \item \textbf{Propiedad de Planificación de Cero Inventarios (Zero-Inventory Ordering)}: En una política óptima, la ordenación ocurre únicamente cuando el nivel de inventario es cero. Formalmente, existe una solución óptima que satisface:
     \begin{equation}
         I_{t-1} \cdot x_t = 0 \quad \text{para todo } t = 1, \ldots, N
-        \tag{6}
     \end{equation}
     donde $I_{t-1}$ es el inventario inicial del periodo $t$ y $x_t$ es la cantidad ordenada.
     
     \item \textbf{Estructura de Subproblemas Independientes}: El problema de $N$ periodos se descompone en subproblemas más simples mediante el principio de optimalidad de Bellman. La función de valor $f_t(I)$ satisface:
     \begin{equation}
         f_t(I) = \min_{x_t \geq 0} \left\{ C_t(I, x_t) + f_{t+1}(I + x_t - d_t) \right\}
-        \tag{7}
     \end{equation}
     donde $C_t(I, x_t)$ representa el costo inmediato en el periodo $t$.
     
@@ -179,6 +178,7 @@ La formulación de Wagner-Whitin, aunque no estrictamente convexa debido a la pr
     
     \item \textbf{Existencia de Puntos de Regeneración (Regeneration Points)}: Los periodos en los que el inventario se agota (puntos de regeneración) dividen el problema en subintervalos independientes, reduciendo la complejidad computacional de $O(2^N)$ a $O(N^2)$.
 \end{enumerate}
+
 
 Estas propiedades garantizan que el algoritmo de Wagner-Whitin, basado en programación dinámica, encuentre la solución óptima global a pesar de la no convexidad introducida por los costos fijos. La optimalidad se demuestra mediante inducción hacia atrás sobre el horizonte de planificación, donde en cada etapa $t$ se garantiza que $f_t(I)$ representa el costo mínimo acumulado desde $t$ hasta el final.
 
@@ -243,18 +243,15 @@ Considérese un horizonte de planificación discreto de $N$ periodos. En cada pe
 El problema consiste en encontrar una política de pedidos $\{x_t\}_{t=1}^N$ que minimice:
 \begin{equation}
 \min \sum_{t=1}^N \left[ \delta(x_t) s_t + h_t I_t \right]
-\tag{8}
 \end{equation}
 sujeto a las restricciones de balance de inventario y no negatividad:
 \begin{align}
-I_t &= I_{t-1} + x_t - d_t, & \forall t = 1, \ldots, N \label{eq:balance} \\
-I_t &\geq 0, & \forall t = 1, \ldots, N \label{eq:no_negatividad_I} \\
-x_t &\geq 0, & \forall t = 1, \ldots, N \label{eq:no_negatividad_x} \\
-I_0 &= 0 & \text{(inventario inicial cero)} \label{eq:inicial}
+    I_t &= I_{t-1} + x_t - d_t, & \forall t = 1, \ldots, N \\
+    I_t &\geq 0, & \forall t = 1, \ldots, N \\
+    x_t &\geq 0, & \forall t = 1, \ldots, N \\
+    I_0 &= 0 & \text{(inventario inicial cero)} 
 \end{align}
-donde $\delta(x_t)$ es la función indicadora que toma valor 1 si $x_t > 0$ y 0 en caso contrario.
 \end{definition}
-
 
 \begin{proposition}[Análisis de Factibilidad y Existencia]
 El problema de dimensionamiento de lotes con demanda dinámica satisface:
@@ -313,7 +310,7 @@ donde $M_t = \sum_{i=t}^N d_i$ es una cota superior para $x_t$ en cualquier solu
 \end{definition}
 
 \begin{proposition}[Equivalencia entre Formulaciones]
-Las formulaciones original (6)-(10) y MILP (9)-(14) son equivalentes, meaning:
+Las formulaciones original (8) y MILP (9)-(14) son equivalentes, es decir:
 \begin{enumerate}
     \item Tienen el \textbf{mismo valor óptimo} de la función objetivo
     \item Existe una \textbf{correspondencia biyectiva} entre soluciones óptimas
@@ -396,6 +393,7 @@ Aunque equivalentes matemáticamente, las formulaciones difieren computacionalme
 \end{itemize}
 Para problemas grandes, el algoritmo específico sigue siendo más eficiente que resolver el MILP con métodos generales.
 \end{remark}
+
 \subsection{Formulación como Programación Dinámica}
 
 El problema de dimensionamiento de lotes admite una formulación natural mediante programación dinámica, que explota la estructura secuencial de las decisiones a lo largo del horizonte de planificación.
@@ -490,7 +488,7 @@ Los teoremas fundamentales de Wagner-Whitin permiten las siguientes simplificaci
 Estas propiedades reducen la complejidad de $O(K^2 N)$ a $O(N^2)$, haciendo el problema computacionalmente tratable incluso para $N$ grande.
 \end{remark}
 
-\begin{algorithm}[H]
+\begin{algorithm}
 \caption{Programación Dinámica Simplificada por Wagner-Whitin}
 \begin{algorithmic}[1]
 \State Inicializar $F(0) = 0$ \Comment{Costo óptimo hasta el periodo 0}
@@ -511,9 +509,11 @@ Estas propiedades reducen la complejidad de $O(K^2 N)$ a $O(N^2)$, haciendo el p
 \begin{remark}[Equivalencia con la Formulación Original]
 La formulación simplificada $F(t) = \min_{0 \leq j < t} [F(j) + s_{j+1} + H(j,t)]$ es equivalente a resolver la ecuación de Bellman (15) bajo las propiedades estructurales de Wagner-Whitin, donde $H(j,t)$ representa el costo de mantener inventario al cubrir demandas de $j+1$ a $t$ con una orden en $j+1$.
 \end{remark}
+
 \section{Resultados del articulo base}
 
 Los siguientes teoremas, demostrados originalmente por Wagner y Whitin, establecen propiedades estructurales de la solución óptima que reducen drásticamente el espacio de búsqueda.
+
 \begin{theorem}[Propiedad de Regeneración o Cero-Inventario]
 En todo problema de dimensionamiento de lotes con demanda dinámica, existe al menos una solución óptima que satisface la condición de cero inventarios:
 \begin{equation}
@@ -901,24 +901,24 @@ donde $F(t)$ representa el costo mínimo acumulado para los primeros $t$ periodo
 
 La elegancia del algoritmo reside en su interpretación geométrica: el horizonte temporal se divide en intervalos definidos por puntos de regeneración consecutivos, donde cada intervalo $[j+1, t]$ es abastecido por un único pedido en $j+1$ que cubre exactamente la demanda acumulada del intervalo.
 
-\begin{algorithm}[H]
+\begin{algorithm}
 \caption{Algoritmo Wagner-Whitin}
 \begin{algorithmic}[1]
 \Require Demandas $d_t$, costos de setup $s_t$, costos de mantener $h_t$ para $t=1,\ldots,N$
 \Ensure Política óptima de pedidos $\{x_t\}_{t=1}^N$ y costo total mínimo $F(N)$
 \State Inicializar $F(0) = 0$, $P(0) = 0$ \Comment{$P(t)$ almacena el último punto de regeneración}
 \For{$t = 1$ to $N$}
-    \State $F(t) \gets \infty$ \comment{Inicializar con valor grande}
+    \State $F(t) \gets \infty$ \Comment{Inicializar con valor grande}
     \For{$j = 0$ to $t-1$}
         \State Calcular costo de mantener: $H \gets \sum_{k=j+1}^{t-1} \sum_{l=k+1}^t h_l d_k$
         \State $costo \gets F(j) + s_{j+1} + H$
         \If{$costo < F(t)$}
             \State $F(t) \gets costo$
-            \State $P(t) \gets j$ \comment{Registrar que el pedido en $j+1$ cubre hasta $t$}
+            \State $P(t) \gets j$ \Comment{Registrar que el pedido en $j+1$ cubre hasta $t$}
         \EndIf
     \EndFor
 \EndFor
-\State $\{x_t\}_{t=1}^N \gets \text{reconstruirPolítica}(P, d)$ \comment{Backtracking}
+\State $\{x_t\}_{t=1}^N \gets \text{reconstruirPolítica}(P, d)$ \Comment{Backtracking}
 \State \Return $F(N)$, $\{x_t\}_{t=1}^N$
 \end{algorithmic}
 \end{algorithm}
@@ -955,12 +955,12 @@ con condiciones iniciales $H(j,j) = 0$ para todo $j$.
 Una vez precomputada $H$, cada evaluación del costo en el algoritmo principal toma tiempo constante, reduciendo la complejidad total de $O(N^3)$ a $O(N^2)$.
 \end{proof}
 
-\begin{algorithm}[H]
+\begin{algorithm}
 \caption{Algoritmo Wagner-Whitin Optimizado}
 \begin{algorithmic}[1]
 \Require Demandas $d_t$, costos $s_t$, $h_t$ para $t=1,\ldots,N$
 \Ensure Política óptima y costo mínimo
-\State Precomputar $H(j,t)$ para $0 \leq j < t \leq N$ \comment{$O(N^2)$}
+\State Precomputar $H(j,t)$ para $0 \leq j < t \leq N$ \Comment{$O(N^2)$}
 \State $F(0) \gets 0$, $P(0) \gets 0$
 \For{$t = 1$ to $N$}
     \State $F(t) \gets \infty$
@@ -982,8 +982,8 @@ La política óptima se reconstruye mediante el siguiente procedimiento de backt
     \State $t \gets N$, $x \gets [0,\ldots,0]$
     \While{$t > 0$}
         \State $j \gets P(t)$
-        \State $x_{j+1} \gets \sum_{i=j+1}^t d_i$ \comment{Pedido en $j+1$ cubre hasta $t$}
-        \State $t \gets j$ \comment{Retroceder al punto de regeneración anterior}
+        \State $x_{j+1} \gets \sum_{i=j+1}^t d_i$ \Comment{Pedido en $j+1$ cubre hasta $t$}
+        \State $t \gets j$ \Comment{Retroceder al punto de regeneración anterior}
     \EndWhile
     \State \Return $x$
 \EndFunction
@@ -1078,7 +1078,7 @@ Sin embargo, el algoritmo original sigue siendo fundamental como punto de refere
 Más de seis décadas después de su publicación, el algoritmo Wagner-Whitin mantiene su relevancia:
 \begin{itemize}
     \item \textbf{Educación}: Enseña principios fundamentales de programación dinámica
-    \textbf{Investigación}: Sirve como benchmark para nuevos algoritmos
+    \item \textbf{Investigación}: Sirve como benchmark para nuevos algoritmos
     \item \textbf{Práctica industrial}: Se utiliza en sistemas de gestión de inventarios
     \item \textbf{Extensiones modernas}: Inspira algoritmos para problemas más complejos
 \end{itemize}
@@ -1092,8 +1092,8 @@ Más de seis décadas después de su publicación, el algoritmo Wagner-Whitin ma
 \bibitem{wagner1958dynamic}
 Wagner, H. M. \& Whitin, T. M. (1958). Dynamic Version of the Economic Lot Size Model. \emph{Management Science}, 5(1), 89-96.
 
-\bibitem{aksoy2024robust}
-Aksoy, A. \& Küçükyavuz, S. (2024). Robust Lot-Sizing Problems with Uncertain Costs. \emph{Optimization Letters}, 18(3), 543-567.
+\bibitem{richter2001reverse}
+Richter, K. \& Sombrutzki, M. (2001). The reverse Wagner/Whitin model with variable manufacturing and remanufacturing cost. \emph{International Journal of Production Economics}, 71(1-3), 1-12.
 
 \bibitem{bellman1957dynamic}
 Bellman, R. (1957). \emph{Dynamic Programming}. Princeton University Press.
