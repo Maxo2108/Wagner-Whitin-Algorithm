@@ -1,0 +1,22 @@
+# Archivos auxiliares de LaTeX
+*.aux
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.brf
+*.toc
+*.lof
+*.lot
+*.bcf
+*.run.xml
+
+# Archivos de compilación y salida
+# Recomiendo ignorar el PDF, ya que se genera desde el .tex
+*.pdf
+
+# Carpetas de compilación
+_build/
