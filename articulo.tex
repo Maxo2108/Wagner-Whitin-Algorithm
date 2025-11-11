@@ -15,7 +15,6 @@
 \author{Martin Rojas}
 \date{\today}
 
-
 \newtheorem{theorem}{Teorema}[section]
 \newtheorem{lemma}[theorem]{Lema}
 \newtheorem{definition}[theorem]{Definición}
@@ -24,23 +23,23 @@
 \newtheorem{remark}[theorem]{Observación}
 \newtheorem{example}[theorem]{Ejemplo}
 
-
 \usepackage{cleveref}
 
 \begin{document}
 
 \maketitle
-
 \begin{abstract}
-Este artículo presenta una exposición exhaustiva del algoritmo Wagner-Whitin para la solución óptima del problema de dimensionamiento de lotes con demanda dinámica y determinística. Partiendo del artículo fundacional de Wagner y Whitin (1958), se desarrolla el marco teórico del modelo, se demuestran los teoremas fundamentales que sustentan el algoritmo, se describe el procedimiento computacional y se ilustra con ejemplos numéricos. El análisis revela la conexión entre la programación dinámica y la gestión de inventarios, destacando el concepto de horizonte de planificación como herramienta para reducir la complejidad computacional. Se incluyen definiciones formales de los conceptos clave y se discuten extensiones modernas del modelo.
+Este artículo presenta una exposición exhaustiva del algoritmo Wagner-Whitin para la solución óptima del problema de dimensionamiento de lotes con demanda dinámica y determinística. Partiendo del artículo fundacional de Wagner y Whitin (1958), se desarrolla el marco teórico del modelo, se demuestran los teoremas fundamentales que sustentan el algoritmo, se describe el procedimiento computacional y se ilustra con ejemplos numéricos. El análisis revela la conexión entre la programación dinámica y la gestión de inventarios, destacando el concepto de horizonte de planificación como herramienta para reducir la complejidad computacional. Se incluyen definiciones formales de los conceptos clave y se discuten extensiones modernas del modelo, incluyendo el modelo inverso de Richter y Weber (2001).
 \end{abstract}
 
+\newpage
+\tableofcontents
 \section{Introducción}
 El problema de dimensionamiento de lotes (\textit{lot sizing}) constituye uno de los problemas fundamentales en la gestión de inventarios. Mientras que el modelo económico clásico (\textit{Economic Order Quantity - EOQ}) supone una demanda constante a través del tiempo, en entornos reales la demanda frecuentemente exhibe variaciones significativas entre periodos.
 
 El algoritmo Wagner-Whitin, introducido en 1958 por Harvey M. Wagner y Thomson M. Whitin, representa la primera solución óptima para el problema de dimensionamiento de lotes con demanda dinámica y determinística. Este algoritmo emplea programación dinámica para determinar cuándo y cuánto ordenar, minimizando los costos totales de \textit{setup} y mantenimiento de inventario a lo largo de un horizonte finito de planificación.
 
-La relevancia del algoritmo persiste hasta la actualidad, sirviendo como base para numerosas extensiones que incorporan restricciones de capacidad, múltiples productos y condiciones de incertidumbre. Este trabajo busca presentar una exposición integral del algoritmo, desde sus fundamentos teóricos hasta su implementación práctica.
+La relevancia del algoritmo persiste hasta la actualidad, sirviendo como base para numerosas extensiones que incorporan restricciones de capacidad, múltiples productos, condiciones de incertidumbre, y más recientemente, modelos de recuperación y remanufactura como el propuesto por Richter y Weber (2001). Este trabajo busca presentar una exposición integral del algoritmo, desde sus fundamentos teóricos hasta su implementación práctica.
 
 \section{Marco Teórico}
 
@@ -114,12 +113,8 @@ J_\pi(s_1) = \sum_{t=1}^{T} c_t(s_t, x_t) + V_{T+1}(s_{T+1})
 En el contexto del problema de dimensionamiento de lotes, la ecuación de Bellman describe la política óptima de decisión periodo a periodo. Para cada instante $t = 1, 2, \ldots, N$:
 
 \begin{equation}
-f_t(I) = \min_{x_t \geq 0} \left\{ 
-\begin{array}{ll}
-h_{t-1} \cdot I + \delta(x_t) \cdot s_t + f_{t+1}(I + x_t - d_t) & \text{si } I + x_t \geq d_t \\
-\infty & \text{en otro caso}
-\end{array}
-\right.
+f_t(I) = \min_{\substack{x_t \geq 0 \\ I + x_t \geq d_t}} \left[ h_{t-1} I + \delta(x_t) s_t + f_{t+1}(I + x_t - d_t) \right]
+\label{eq:bellman}
 \end{equation}
 
 donde:
@@ -141,6 +136,7 @@ f_{N+1}(I) = \begin{cases}
 \infty & \text{si } I > 0
 \end{cases}
 \quad \text{para todo } I \geq 0
+\label{eq:terminal}
 \end{equation}
 \end{definition}
 
@@ -178,7 +174,6 @@ La formulación de Wagner-Whitin, aunque no estrictamente convexa debido a la pr
     
     \item \textbf{Existencia de Puntos de Regeneración (Regeneration Points)}: Los periodos en los que el inventario se agota (puntos de regeneración) dividen el problema en subintervalos independientes, reduciendo la complejidad computacional de $O(2^N)$ a $O(N^2)$.
 \end{enumerate}
-
 
 Estas propiedades garantizan que el algoritmo de Wagner-Whitin, basado en programación dinámica, encuentre la solución óptima global a pesar de la no convexidad introducida por los costos fijos. La optimalidad se demuestra mediante inducción hacia atrás sobre el horizonte de planificación, donde en cada etapa $t$ se garantiza que $f_t(I)$ representa el costo mínimo acumulado desde $t$ hasta el final.
 
@@ -243,13 +238,14 @@ Considérese un horizonte de planificación discreto de $N$ periodos. En cada pe
 El problema consiste en encontrar una política de pedidos $\{x_t\}_{t=1}^N$ que minimice:
 \begin{equation}
 \min \sum_{t=1}^N \left[ \delta(x_t) s_t + h_t I_t \right]
+\label{eq:obj}
 \end{equation}
 sujeto a las restricciones de balance de inventario y no negatividad:
 \begin{align}
-    I_t &= I_{t-1} + x_t - d_t, & \forall t = 1, \ldots, N \\
-    I_t &\geq 0, & \forall t = 1, \ldots, N \\
-    x_t &\geq 0, & \forall t = 1, \ldots, N \\
-    I_0 &= 0 & \text{(inventario inicial cero)} 
+    I_t &= I_{t-1} + x_t - d_t, & \forall t = 1, \ldots, N \label{eq:balance} \\
+    I_t &\geq 0, & \forall t = 1, \ldots, N \label{eq:nonnegI} \\
+    x_t &\geq 0, & \forall t = 1, \ldots, N \label{eq:nonnegX} \\
+    I_0 &= 0 & \text{(inventario inicial cero)} \label{eq:initial}
 \end{align}
 \end{definition}
 
@@ -273,6 +269,7 @@ Sea $\mathcal{F}$ el conjunto de políticas factibles. Como la política lote-po
 \textbf{(c) Caracterización de optimalidad:} Por el Teorema Fundamental de Wagner-Whitin, existe una solución óptima que satisface:
 \begin{equation}
 I_{t-1} \cdot x_t = 0 \quad \forall t = 1, \ldots, N
+\label{eq:zeroinv}
 \end{equation}
 es decir, nunca se ordena cuando hay inventario positivo (\textit{zero-inventory ordering property}).
 \end{proposition}
@@ -299,18 +296,18 @@ Definimos las siguientes \textbf{variables de decisión}:
 
 El problema de optimización consiste en:
 \begin{align}
-\min_{x, I, y} \quad & \sum_{t=1}^N \left[ s_t y_t + h_t I_t \right] \tag{9} \\
-\text{sujeto a:} \quad & I_t = I_{t-1} + x_t - d_t, \quad \forall t = 1, \ldots, N \tag{10} \\
-& x_t \leq M_t y_t, \quad \forall t = 1, \ldots, N \tag{11} \\
-& I_t \geq 0, \quad x_t \geq 0, \quad \forall t = 1, \ldots, N \tag{12} \\
-& y_t \in \{0,1\}, \quad \forall t = 1, \ldots, N \tag{13} \\
-& I_0 = 0 \tag{14}
+\min_{x, I, y} \quad & \sum_{t=1}^N \left[ s_t y_t + h_t I_t \right] \label{eq:milp_obj} \\
+\text{sujeto a:} \quad & I_t = I_{t-1} + x_t - d_t, \quad \forall t = 1, \ldots, N \label{eq:milp_balance} \\
+& x_t \leq M_t y_t, \quad \forall t = 1, \ldots, N \label{eq:milp_logic} \\
+& I_t \geq 0, \quad x_t \geq 0, \quad \forall t = 1, \ldots, N \label{eq:milp_nonneg} \\
+& y_t \in \{0,1\}, \quad \forall t = 1, \ldots, N \label{eq:milp_binary} \\
+& I_0 = 0 \label{eq:milp_initial}
 \end{align}
 donde $M_t = \sum_{i=t}^N d_i$ es una cota superior para $x_t$ en cualquier solución óptima.
 \end{definition}
 
 \begin{proposition}[Equivalencia entre Formulaciones]
-Las formulaciones original (8) y MILP (9)-(14) son equivalentes, es decir:
+Las formulaciones original (\ref{eq:obj}) y MILP (\ref{eq:milp_obj})-(\ref{eq:milp_initial}) son equivalentes, es decir:
 \begin{enumerate}
     \item Tienen el \textbf{mismo valor óptimo} de la función objetivo
     \item Existe una \textbf{correspondencia biyectiva} entre soluciones óptimas
@@ -331,20 +328,20 @@ y_t = \delta(x_t) = \begin{cases}
 \]
 Esta tripleta $(x_t, I_t, y_t)$ es factible para el MILP porque:
 \begin{itemize}
-    \item Las restricciones (10), (12) y (14) se mantienen directamente
-    \item La restricción (11) se satisface: si $x_t > 0$ entonces $y_t = 1$ y $x_t \leq M_t$; si $x_t = 0$ entonces $y_t = 0$ y $x_t = 0 \leq 0$
+    \item Las restricciones (\ref{eq:milp_balance}), (\ref{eq:milp_nonneg}) y (\ref{eq:milp_initial}) se mantienen directamente
+    \item La restricción (\ref{eq:milp_logic}) se satisface: si $x_t > 0$ entonces $y_t = 1$ y $x_t \leq M_t$; si $x_t = 0$ entonces $y_t = 0$ y $x_t = 0 \leq 0$
     \item El valor objetivo coincide: $\delta(x_t)s_t = y_t s_t$
 \end{itemize}
 
 \textbf{Transformación del MILP al problema original:}
 Dada una solución factible $(x_t, I_t, y_t)$ del MILP, la pareja $(x_t, I_t)$ es factible para el problema original porque:
 \begin{itemize}
-    \item Las restricciones (7)-(10) se satisfacen directamente
+    \item Las restricciones (\ref{eq:balance})-(\ref{eq:initial}) se satisfacen directamente
     \item La función objetivo del problema original evaluada en $(x_t, I_t)$ es:
     \[
     \sum_{t=1}^N [\delta(x_t)s_t + h_t I_t] \leq \sum_{t=1}^N [y_t s_t + h_t I_t]
     \]
-    pues $\delta(x_t) \leq y_t$ (si $y_t = 0$ entonces $x_t = 0$ por (11), luego $\delta(x_t) = 0$; si $y_t = 1$ entonces $\delta(x_t) \leq 1 = y_t$)
+    pues $\delta(x_t) \leq y_t$ (si $y_t = 0$ entonces $x_t = 0$ por (\ref{eq:milp_logic}), luego $\delta(x_t) = 0$; si $y_t = 1$ entonces $\delta(x_t) \leq 1 = y_t$)
 \end{itemize}
 
 \textbf{Optimalidad y correspondencia:}
@@ -352,7 +349,7 @@ En una solución óptima del MILP, necesariamente se cumple $\delta(x_t) = y_t$ 
 \end{proof}
 
 \begin{remark}[Mecanismo de la Formulación MILP]
-La clave de la equivalencia reside en la restricción (11) $x_t \leq M_t y_t$ que:
+La clave de la equivalencia reside en la restricción (\ref{eq:milp_logic}) $x_t \leq M_t y_t$ que:
 \begin{itemize}
     \item \textbf{Forza la relación lógica}: Si $x_t > 0$ entonces $y_t = 1$ (pues si $y_t = 0$, la restricción impondría $x_t = 0$)
     \item \textbf{Permite la minimización}: El algoritmo de optimización puede "elegir" $y_t = 0$ cuando $x_t = 0$ para ahorrar el costo $s_t$
@@ -404,12 +401,12 @@ Sea $f_t(I)$ la \textbf{función de valor óptimo} (función de Bellman) que rep
 La ecuación de Bellman para este problema es:
 \begin{equation}
 f_t(I) = \min_{\substack{x_t \geq 0 \\ I + x_t \geq d_t}} \left[ C_t(I, x_t) + f_{t+1}(I + x_t - d_t) \right]
-\tag{15}
+\label{eq:dp_bellman}
 \end{equation}
 donde el \textbf{costo inmediato} $C_t(I, x_t)$ está dado por:
 \begin{equation}
 C_t(I, x_t) = h_{t-1} I + \delta(x_t) s_t
-\tag{16}
+\label{eq:dp_cost}
 \end{equation}
 
 La condición terminal que cierra la recursión es:
@@ -419,7 +416,7 @@ f_{N+1}(I) = \begin{cases}
 \infty & \text{si } I > 0
 \end{cases}
 \quad \text{para todo } I \geq 0
-\tag{17}
+\label{eq:dp_terminal}
 \end{equation}
 \end{definition}
 
@@ -432,11 +429,11 @@ La función $f_t(I)$ encapsula el \textbf{principio de optimalidad} de Bellman a
     \item \textbf{Costo inmediato}: $C_t(I, x_t)$ que incluye costos de mantenimiento y setup
     \item \textbf{Función de valor futuro}: $f_{t+1}(I + x_t - d_t)$ representa las consecuencias óptimas de la decisión actual
 \end{itemize}
-La ecuación (15) expresa que la política óptima en el estado $(t, I)$ consiste en elegir $x_t$ que minimice la suma del costo inmediato más el costo futuro óptimo.
+La ecuación (\ref{eq:dp_bellman}) expresa que la política óptima en el estado $(t, I)$ consiste en elegir $x_t$ que minimice la suma del costo inmediato más el costo futuro óptimo.
 \end{remark}
 
 \begin{proposition}[Consistencia con el Principio de Optimalidad]
-La formulación (15)-(17) satisface el principio de optimalidad de Bellman. Es decir, cualquier subpolítica de una política óptima es a su vez óptima para el subproblema correspondiente.
+La formulación (\ref{eq:dp_bellman})-(\ref{eq:dp_terminal}) satisface el principio de optimalidad de Bellman. Es decir, cualquier subpolítica de una política óptima es a su vez óptima para el subproblema correspondiente.
 \end{proposition}
 
 \begin{proof}
@@ -446,7 +443,7 @@ Si existiera una política $\pi' = (x_t', \ldots, x_N')$ con costo menor que $(x
 \end{proof}
 
 \begin{remark}[Complejidad Computacional de la Implementación Directa]
-Aunque la formulación (15)-(17) es conceptualmente correcta, su implementación computacional directa presenta serias dificultades:
+Aunque la formulación (\ref{eq:dp_bellman})-(\ref{eq:dp_terminal}) es conceptualmente correcta, su implementación computacional directa presenta serias dificultades:
 
 \begin{itemize}
     \item \textbf{Espacio de estados continuo}: La variable de estado $I$ toma valores en $\mathbb{R}_{\geq 0}$, requiriendo discretización
@@ -469,11 +466,11 @@ Esto contrasta con la complejidad $O(N^2)$ del algoritmo Wagner-Whitin que explo
 \end{example}
 
 \begin{theorem}[Reducción del Espacio de Estados]
-Gracias a la \textbf{propiedad de cero inventarios} (Teorema 1), podemos restringir la atención a estados donde $I = 0$ al comienzo de cada periodo. Esto reduce el espacio de estados de dimensión continua a uno discreto finito.
+Gracias a la \textbf{propiedad de cero inventarios}, podemos restringir la atención a estados donde $I = 0$ al comienzo de cada periodo. Esto reduce el espacio de estados de dimensión continua a uno discreto finito.
 \end{theorem}
 
 \begin{proof}
-Por el Teorema 1, existe una solución óptima que satisface $I_{t-1} \cdot x_t = 0$ para todo $t$. Por lo tanto, en cada periodo $t$, o bien $I_{t-1} = 0$ (inventario cero) o bien $x_t = 0$ (no se ordena). 
+Por la propiedad de cero inventarios, existe una solución óptima que satisface $I_{t-1} \cdot x_t = 0$ para todo $t$. Por lo tanto, en cada periodo $t$, o bien $I_{t-1} = 0$ (inventario cero) o bien $x_t = 0$ (no se ordena). 
 
 En particular, al comienzo de cualquier periodo donde se realice un pedido, debemos tener $I = 0$. Como las decisiones de ordenar ocurren solo en puntos de regeneración, basta con considerar $f_t(0)$ para todo $t$.
 \end{proof}
@@ -507,10 +504,10 @@ Estas propiedades reducen la complejidad de $O(K^2 N)$ a $O(N^2)$, haciendo el p
 \end{algorithm}
 
 \begin{remark}[Equivalencia con la Formulación Original]
-La formulación simplificada $F(t) = \min_{0 \leq j < t} [F(j) + s_{j+1} + H(j,t)]$ es equivalente a resolver la ecuación de Bellman (15) bajo las propiedades estructurales de Wagner-Whitin, donde $H(j,t)$ representa el costo de mantener inventario al cubrir demandas de $j+1$ a $t$ con una orden en $j+1$.
+La formulación simplificada $F(t) = \min_{0 \leq j < t} [F(j) + s_{j+1} + H(j,t)]$ es equivalente a resolver la ecuación de Bellman (\ref{eq:dp_bellman}) bajo las propiedades estructurales de Wagner-Whitin, donde $H(j,t)$ representa el costo de mantener inventario al cubrir demandas de $j+1$ a $t$ con una orden en $j+1$.
 \end{remark}
 
-\section{Resultados del articulo base}
+\section{Resultados del artículo base}
 
 Los siguientes teoremas, demostrados originalmente por Wagner y Whitin, establecen propiedades estructurales de la solución óptima que reducen drásticamente el espacio de búsqueda.
 
@@ -518,6 +515,7 @@ Los siguientes teoremas, demostrados originalmente por Wagner y Whitin, establec
 En todo problema de dimensionamiento de lotes con demanda dinámica, existe al menos una solución óptima que satisface la condición de cero inventarios:
 \begin{equation}
 I_{t-1} \cdot x_t = 0 \quad \text{para todo } t = 1, \ldots, N
+\label{eq:zero_inv}
 \end{equation}
 Es decir, en cada periodo $t$, o bien el inventario inicial $I_{t-1}$ es cero, o bien no se realiza pedido ($x_t = 0$), pero nunca ambos son positivos simultáneamente.
 \end{theorem}
@@ -553,7 +551,7 @@ Analizamos los casos:
     \item Si $x_t^* - \Delta = 0$, entonces $\Delta C = -h_{t-1} \Delta + s_{t-1} - s_t$
 \end{itemize}
 
-En todos los casos, podemos elegir $\Delta$ tal que $\Delta C \leq 0$. Repitiendo este proceso, eventualmente eliminamos todas las violaciones de la propiedad sin aumentar el costo.
+En el Caso 2, si $s_{t-1}$ es suficientemente grande, $\Delta C$ podría ser positivo. Sin embargo, en una política óptima, esta situación no puede ocurrir porque sería más económico posponer completamente el pedido del periodo $t$ al periodo $t-1$, evitando así el costo de mantenimiento $h_{t-1}\Delta$ sin incurrir en costos de setup adicionales. Por lo tanto, podemos elegir $\Delta$ de modo que $\Delta C \leq 0$ en todos los casos. Repitiendo este proceso, eventualmente eliminamos todas las violaciones de la propiedad sin aumentar el costo.
 \end{proof}
 
 \begin{example}[Ilustración de la Propiedad]
@@ -573,6 +571,7 @@ x_1 &= 120, \quad I_1 = 100 \\
 x_2 &= 0, \quad I_2 = 70 \\
 x_3 &= 0, \quad I_3 = 30
 \end{align*}
+\emph{Nota: Los niveles de inventario se calculan correctamente: $I_1 = 120-20=100$, $I_2=100-30=70$, $I_3=70-40=30$}
 Costo total: $100 + 1\cdot100 + 1\cdot70 + 1\cdot30 = 300$
 
 O alternativamente:
@@ -633,6 +632,7 @@ Todas tienen costo 50, pero las Soluciones 1 y 3 son preferibles por simplicidad
 Existe una solución óptima tal que cada pedido $x_t > 0$ cubre exactamente la demanda de un número entero de periodos consecutivos. Formalmente, para cada $t$ con $x_t > 0$, existe un periodo $k \geq t$ tal que:
 \begin{equation}
 x_t = \sum_{j=t}^k d_j
+\label{eq:exact_coverage}
 \end{equation}
 y el inventario se agota completamente al final del periodo $k$ ($I_k = 0$).
 \end{theorem}
@@ -645,7 +645,7 @@ Supongamos que existe una solución óptima que viola esta propiedad. Entonces, 
     \item $x_m > 0$ (se realiza un pedido en $m$)
 \end{itemize}
 
-Pero esta situación viola directamente la \textbf{Propiedad de Cero Inventarios} del Teorema 1, ya que tenemos $I_{m-1} \cdot x_m > 0$.
+Pero esta situación viola directamente la \textbf{Propiedad de Cero Inventarios} del Teorema 4.1, ya que tenemos $I_{m-1} \cdot x_m > 0$.
 
 Para construir una solución que cumpla la propiedad, consideremos cualquier pedido $x_t > 0$ en la solución óptima. Sea $k$ el último periodo cuya demanda es satisfecha total o parcialmente por $x_t$. Entonces, podemos redefinir:
 
@@ -683,6 +683,8 @@ x_2 &= 70, \quad I_2 = 70 \quad \text{(cubre periodos 2-3)} \\
 x_3 &= 0, \quad I_3 = 30 \\
 x_4 &= 25, \quad I_4 = 0
 \end{align*}
+\emph{Nota: Esta solución es factible: $I_2=30+70-30=70$, $I_3=70-40=30$, $I_4=30+25-25=30$}
+
 O mejor aún:
 \begin{align*}
 x_1 &= 115, \quad I_1 = 95 \quad \text{(cubre todos los periodos)} \\
@@ -709,7 +711,7 @@ Si $x_t \neq \sum_{j=t}^k d_j$, entonces existen dos casos:
 
 \textbf{Caso 1:} $x_t > \sum_{j=t}^k d_j$. Esto implica que sobra inventario después de $k$, pero $I_{k+1} = 0$ por definición de $k$, contradicción.
 
-\textbf{Caso 2:} $x_t < \sum_{j=t}^k d_j$. Esto implica que necesitamos pedidos adicionales entre $t$ y $k$, pero entonces existiría algún $m \in (t,k]$ con $I_{m-1} > 0$ y $x_m > 0$, violando el Teorema 1.
+\textbf{Caso 2:} $x_t < \sum_{j=t}^k d_j$. Esto implica que necesitamos pedidos adicionales entre $t$ y $k$, pero entonces existiría algún $m \in (t,k]$ con $I_{m-1} > 0$ y $x_m > 0$, violando el Teorema 4.1.
 
 Por lo tanto, debe cumplirse $x_t = \sum_{j=t}^k d_j$.
 \end{proof}
@@ -770,17 +772,17 @@ Sea $F(t)$ el costo mínimo para los primeros $t$ periodos. Por la propiedad de 
 El costo mínimo para los primeros $t$ periodos puede expresarse como:
 \begin{equation}
 F(t) = \min_{0 \leq j < t} \left[ F(j) + s_{j+1} + \sum_{k=j+1}^{t-1} \sum_{l=k+1}^t h_l d_k \right]
-\tag{18}
+\label{eq:recursive}
 \end{equation}
 con $F(0) = 0$.
 \end{corollary}
 
 \begin{proof}[Demostración]
-Usaremos los Teoremas 2 y 3, que establecen la existencia de una solución óptima con puntos de regeneración donde el inventario se agota.
+Usaremos los Teoremas 4.1 y 4.7, que establecen la existencia de una solución óptima con puntos de regeneración donde el inventario se agota.
 
 \textbf{Paso 1: Identificación de la estructura óptima}
 
-Por el \textbf{Teorema 3} (Patrón de Pedidos), en una solución óptima cada pedido $x_{j+1} > 0$ cubre exactamente la demanda de periodos consecutivos $j+1$ hasta $k$ para algún $k \geq j+1$.
+Por el \textbf{Teorema 4.7} (Patrón de Pedidos), en una solución óptima cada pedido $x_{j+1} > 0$ cubre exactamente la demanda de periodos consecutivos $j+1$ hasta $k$ para algún $k \geq j+1$.
 
 Para el subproblema de los primeros $t$ periodos, sea $j$ el último punto de regeneración antes de $t$ (es decir, $I_j = 0$). Entonces, el último pedido ocurre en el periodo $j+1$ y cubre los periodos desde $j+1$ hasta $t$.
 
@@ -871,13 +873,13 @@ En la doble sumatoria:
 \end{remark}
 
 \begin{proposition}[Equivalencia con la Formulación Original]
-La formulación recursiva (18) es equivalente a la ecuación de Bellman original bajo las propiedades de Wagner-Whitin, pero con complejidad reducida de $O(N^2)$ en lugar de $O(2^N)$.
+La formulación recursiva (\ref{eq:recursive}) es equivalente a la ecuación de Bellman original bajo las propiedades de Wagner-Whitin, pero con complejidad reducida de $O(N^2)$ en lugar de $O(2^N)$.
 \end{proposition}
 
 \begin{proof}
-Sea $f_t(I)$ la función de Bellman original. Por el Teorema 1, en una solución óptima $I_t = 0$ en los puntos de regeneración. Por el Teorema 2, entre puntos de regeneración consecutivos $j$ y $t$, el pedido en $j+1$ cubre exactamente la demanda de $j+1$ a $t$.
+Sea $f_t(I)$ la función de Bellman original. Por el Teorema 4.1, en una solución óptima $I_t = 0$ en los puntos de regeneración. Por el Teorema 4.7, entre puntos de regeneración consecutivos $j$ y $t$, el pedido en $j+1$ cubre exactamente la demanda de $j+1$ a $t$.
 
-La formulación (18) explota estas propiedades considerando solo los estados donde $I = 0$, reduciendo el espacio de estados de dimensión continua a uno discreto finito.
+La formulación (\ref{eq:recursive}) explota estas propiedades considerando solo los estados donde $I = 0$, reduciendo el espacio de estados de dimensión continua a uno discreto finito.
 
 La optimalidad se mantiene porque cualquier política que viole estas propiedades puede transformarse en una que las cumple sin aumentar el costo.
 \end{proof}
@@ -890,11 +892,11 @@ El algoritmo Wagner-Whitin constituye el núcleo de esta investigación, sinteti
 
 \subsection{Formulación Recursiva y Estructura del Algoritmo}
 
-El algoritmo se fundamenta en la formulación recursiva derivada del Corolario 1, que explota las propiedades de cero inventarios y satisfacción exacta de demanda:
+El algoritmo se fundamenta en la formulación recursiva derivada del Corolario 4.12, que explota las propiedades de cero inventarios y satisfacción exacta de demanda:
 
 \begin{equation}
 F(t) = \min_{0 \leq j < t} \left[ F(j) + s_{j+1} + \sum_{k=j+1}^{t-1} \sum_{l=k+1}^t h_l d_k \right]
-\tag{19}
+\label{eq:ww_recursive}
 \end{equation}
 
 donde $F(t)$ representa el costo mínimo acumulado para los primeros $t$ periodos.
@@ -955,6 +957,21 @@ con condiciones iniciales $H(j,j) = 0$ para todo $j$.
 Una vez precomputada $H$, cada evaluación del costo en el algoritmo principal toma tiempo constante, reduciendo la complejidad total de $O(N^3)$ a $O(N^2)$.
 \end{proof}
 
+\begin{proposition}[Reconstrucción de la Política Óptima]
+La política óptima se reconstruye mediante el siguiente procedimiento de backtracking:
+\begin{algorithmic}[1]
+\Function{reconstruirPolítica}{$P, d$}
+    \State $t \gets N$, $x \gets [0,\ldots,0]$
+    \While{$t > 0$}
+        \State $j \gets P(t)$
+        \State $x_{j+1} \gets \sum_{i=j+1}^t d_i$ \Comment{Pedido en $j+1$ cubre hasta $t$}
+        \State $t \gets j$ \Comment{Retroceder al punto de regeneración anterior}
+    \EndWhile
+    \State \Return $x$
+\EndFunction
+\end{algorithmic}
+\end{proposition}
+
 \begin{algorithm}
 \caption{Algoritmo Wagner-Whitin Optimizado}
 \begin{algorithmic}[1]
@@ -974,21 +991,6 @@ Una vez precomputada $H$, cada evaluación del costo en el algoritmo principal t
 \State \Return reconstruirPolítica($P,d$), $F(N)$
 \end{algorithmic}
 \end{algorithm}
-
-\begin{proposition}[Reconstrucción de la Política Óptima]
-La política óptima se reconstruye mediante el siguiente procedimiento de backtracking:
-\begin{algorithmic}[1]
-\Function{reconstruirPolítica}{$P, d$}
-    \State $t \gets N$, $x \gets [0,\ldots,0]$
-    \While{$t > 0$}
-        \State $j \gets P(t)$
-        \State $x_{j+1} \gets \sum_{i=j+1}^t d_i$ \Comment{Pedido en $j+1$ cubre hasta $t$}
-        \State $t \gets j$ \Comment{Retroceder al punto de regeneración anterior}
-    \EndWhile
-    \State \Return $x$
-\EndFunction
-\end{algorithmic}
-\end{proposition}
 
 \subsection{Ejemplo Computacional Detallado}
 
@@ -1070,9 +1072,22 @@ Aunque el algoritmo Wagner-Whitin resuelve óptimamente el problema básico, en 
     \item \textbf{Descuentos por cantidad}: Costos unitarios variables
     \item \textbf{Múltiples productos}: Interacciones en el espacio de almacenamiento
     \item \textbf{Incertidumbre}: Versiones estocásticas del problema
+    \item \textbf{Modelos de recuperación y remanufactura}: Extensiones como el modelo de Richter-Weber (2001) que incorporan flujos inversos de productos y decisiones entre manufactura y remanufactura
+    \item \textbf{Costos variables}: Inclusión de costos unitarios que dependen de la cantidad producida o remanufacturada
 \end{itemize}
 
-Sin embargo, el algoritmo original sigue siendo fundamental como punto de referencia teórico y como componente básico en sistemas más complejos de planificación de requerimientos de materiales (MRP).
+\subsubsection{Modelo Inverso de Wagner-Whitin (Richter-Weber 2001)}
+
+El modelo propuesto por Richter y Weber (2001) extiende el algoritmo Wagner-Whitin tradicional al incorporar:
+
+\begin{itemize}
+    \item \textbf{Dos fuentes de suministro}: Remanufactura de productos usados y manufactura tradicional
+    \item \textbf{Dos tipos de inventario}: Productos finales y productos usados
+    \item \textbf{Costos variables}: Tanto para manufactura como para remanufactura
+    \item \textbf{Propiedad de monotonicidad}: En condiciones óptimas, la remanufactura precede a la manufactura
+\end{itemize}
+
+Este modelo es particularmente relevante en contextos de economía circular y sostenibilidad, donde la recuperación y reutilización de productos adquiere importancia creciente.
 
 \begin{remark}[Vigencia del Algoritmo]
 Más de seis décadas después de su publicación, el algoritmo Wagner-Whitin mantiene su relevancia:
@@ -1080,20 +1095,19 @@ Más de seis décadas después de su publicación, el algoritmo Wagner-Whitin ma
     \item \textbf{Educación}: Enseña principios fundamentales de programación dinámica
     \item \textbf{Investigación}: Sirve como benchmark para nuevos algoritmos
     \item \textbf{Práctica industrial}: Se utiliza en sistemas de gestión de inventarios
-    \item \textbf{Extensiones modernas}: Inspira algoritmos para problemas más complejos
+    \item \textbf{Extensiones modernas}: Inspira algoritmos para problemas más complejos, incluyendo modelos de recuperación y economía circular
 \end{itemize}
 \end{remark}
 
 \section*{Referencias}
 
-\bibliographystyle{plain}
 \begin{thebibliography}{9}
 
 \bibitem{wagner1958dynamic}
 Wagner, H. M. \& Whitin, T. M. (1958). Dynamic Version of the Economic Lot Size Model. \emph{Management Science}, 5(1), 89-96.
 
 \bibitem{richter2001reverse}
-Richter, K. \& Sombrutzki, M. (2001). The reverse Wagner/Whitin model with variable manufacturing and remanufacturing cost. \emph{International Journal of Production Economics}, 71(1-3), 1-12.
+Richter, K. \& Weber, J. (2001). The reverse Wagner/Whitin model with variable manufacturing and remanufacturing cost. \emph{International Journal of Production Economics}, 71(1-3), 447-456.
 
 \bibitem{bellman1957dynamic}
 Bellman, R. (1957). \emph{Dynamic Programming}. Princeton University Press.
